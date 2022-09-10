@@ -12,7 +12,7 @@ Vagrant.configure("2") do |config|
 
     node.vm.provision "shell", inline: <<-SHELL
       sudo apt-get update
-      sudo apt-get install -y git gdb
+      sudo apt-get install -y git gdb nasm
       sudo git clone https://github.com/longld/peda.git ~/peda
       sudo echo "source ~/peda/peda.py" >> ~/.gdbinit
     SHELL
