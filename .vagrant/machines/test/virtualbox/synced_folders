@@ -1,0 +1,1 @@
+{"virtualbox":{"/home/vagrant/work":{"guestpath":"/home/vagrant/work","hostpath":"/Users/ozakidaichi/Desktop/ozaki/app/binary_analysis/work","disabled":false,"__vagrantfile":true},"/vagrant":{"guestpath":"/vagrant","hostpath":"/Users/ozakidaichi/Desktop/ozaki/app/binary_analysis","disabled":false,"__vagrantfile":true}}}
