@@ -17,3 +17,6 @@ int main(){
   char string[] = "fish";
   vuln(string);
 }
+
+// 以下でコンパイルを行うこと
+// gcc -m32 -fno-stack-protector bof_7-1.c -o test

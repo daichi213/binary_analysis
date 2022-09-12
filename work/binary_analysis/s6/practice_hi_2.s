@@ -1,16 +1,13 @@
 global main
 
 main:
+	push 0x000A2164
+	push 0x6C726F57
+	push 0x00000020
 	push 0x0000006F
-	mov eax, 0x4
-	mov ebx, 0x1
-	mov ecx, esp
-	mov edx, 0x4
-	int 0x80
-
 	push 0x6C6C6548
 	mov eax, 0x4
 	mov ebx, 0x1
 	mov ecx, esp
-	mov edx, 0x4
+	mov edx, 0x14
 	int 0x80

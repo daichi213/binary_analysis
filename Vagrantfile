@@ -12,9 +12,11 @@ Vagrant.configure("2") do |config|
 
     node.vm.provision "shell", inline: <<-SHELL
       sudo apt-get update
-      sudo apt-get install -y git gdb nasm
+      sudo apt-get install -y git gdb nasm python-pip python-dev libssl-dev libffi-dev
       sudo git clone https://github.com/longld/peda.git ~/peda
       sudo echo "source ~/peda/peda.py" >> ~/.gdbinit
+      pip install --upgrade pip -i https://pypi.python.org/simple/
+      pip install --upgrade pwntools -i https://pypi.python.org/simple/
     SHELL
   end
 end
