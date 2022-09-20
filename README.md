@@ -32,16 +32,17 @@ exit:
 ```
 
 - `main, equal, neq, exit`のことをラベルと呼ぶ。高級言語で言うところの関数に近い使い方をする。
-- また、**ラベルは上から順番に実行されていくため、分岐処理で実行したくないラベルについてはjmp命令でラベルを飛ばす必要がある**
-  - 高級言語に慣れているとイメージできないが、`equal`ラベルの処理が終了した後`neq`の処理は飛ばしたいのでjmp命令で終了用のラベルに飛ばすようにしている
+- また、**ラベルは上から順番に実行されていくため、分岐処理で実行したくないラベルについては jmp 命令でラベルを飛ばす必要がある**
+  - 高級言語に慣れているとイメージできないが、`equal`ラベルの処理が終了した後`neq`の処理は飛ばしたいので jmp 命令で終了用のラベルに飛ばすようにしている
 
 ## バッファオーバーフローの実践
 
-バッファオーバーフローを利用して、コード中に埋め込まれている変数を書き換える演習を行う。なお、バッファオーバーフローはscanf関数の脆弱性を利用して行う。
+バッファオーバーフローを利用して、コード中に埋め込まれている変数を書き換える演習を行う。なお、バッファオーバーフローは scanf 関数の脆弱性を利用して行う。
 
 ### 準備
 
 - サンプルコード
+
 ```c
 #include <stdio.h>
 #include <string.h>
@@ -70,58 +71,61 @@ int main(){
 gcc -m32 -fno-stack-protector bof_7-1.c -o test
 ```
 
-### gdb-pedaによる解析
+### gdb-peda による解析
 
 以下、点を確認する
+
 - 入力した情報がメモリのどこから入っていくのか
 - `str2`のアドレス
 
 #### 実行結果
 
 - `scanf`の実行前
+
 ```s
 # ESP
 0000| 0xbffff670 --> 0x80485e5 --> 0x68007325 ('%s')
-0004| 0xbffff674 --> 0xbffff68b --> 0xe562f3b7 
-0008| 0xbffff678 --> 0xc2 
+0004| 0xbffff674 --> 0xbffff68b --> 0xe562f3b7
+0008| 0xbffff678 --> 0xc2
 0012| 0xbffff67c --> 0xb7eb9d56 (<handle_intel+102>:    test   eax,eax)
-0016| 0xbffff680 --> 0xffffffff 
-0020| 0xbffff684 --> 0xbffff6ae --> 0xf6cb0804 
-0024| 0xbffff688 --> 0xb7e2fc34 --> 0x2aad 
+0016| 0xbffff680 --> 0xffffffff
+0020| 0xbffff684 --> 0xbffff6ae --> 0xf6cb0804
+0024| 0xbffff688 --> 0xb7e2fc34 --> 0x2aad
 0028| 0xbffff68c --> 0xb7e562f3 (<__new_exitfn+19>:     add    ebx,0x179d0d)
-0032| 0xbffff690 --> 0x0 
-0036| 0xbffff694 --> 0xc30000 
+0032| 0xbffff690 --> 0x0
+0036| 0xbffff694 --> 0xc30000
 # b
-0040| 0xbffff698 --> 0x62000001 
+0040| 0xbffff698 --> 0x62000001
 # eef
 0044| 0xbffff69c --> 0x666565 ('eef')
 0048| 0xbffff6a0 --> 0xbffff8a3 ("/home/vagrant/work/binary_analysis/s7/test")
 0052| 0xbffff6a4 --> 0x2f ('/')
-0056| 0xbffff6a8 --> 0xbffff6d8 --> 0x0 
+0056| 0xbffff6a8 --> 0xbffff6d8 --> 0x0
 # EBP
 ```
 
 - `scanf`の実行後
+
 ```s
 0000| 0xbffff670 --> 0x80485e5 --> 0x68007325 ('%s')
 0004| 0xbffff674 --> 0xbffff68b ('a' <repeats 22 times>)
-0008| 0xbffff678 --> 0xc2 
+0008| 0xbffff678 --> 0xc2
 0012| 0xbffff67c --> 0xb7eb9d56 (<handle_intel+102>:    test   eax,eax)
-0016| 0xbffff680 --> 0xffffffff 
-0020| 0xbffff684 --> 0xbffff6ae --> 0xf6cb0804 
-0024| 0xbffff688 --> 0x61e2fc34 
+0016| 0xbffff680 --> 0xffffffff
+0020| 0xbffff684 --> 0xbffff6ae --> 0xf6cb0804
+0024| 0xbffff688 --> 0x61e2fc34
 0028| 0xbffff68c ('a' <repeats 21 times>)
 0032| 0xbffff690 ('a' <repeats 17 times>)
 0036| 0xbffff694 ('a' <repeats 13 times>)
 0040| 0xbffff698 ("aaaaaaaaa")
 0044| 0xbffff69c ("aaaaa")
-0048| 0xbffff6a0 --> 0xbfff0061 --> 0x0 
+0048| 0xbffff6a0 --> 0xbfff0061 --> 0x0
 0052| 0xbffff6a4 --> 0x2f ('/')
-0056| 0xbffff6a8 --> 0xbffff6d8 --> 0x0 
+0056| 0xbffff6a8 --> 0xbffff6d8 --> 0x0
 ```
 
 - `str2`で定義されている`beef`は`0xbffff698`と`0xbffff69c`に分割されて格納されている
-  - テキストでは、`beef`が1stackに丸ごと格納されていたがおそらく難読化(攻撃防止)のためにコンパイラがこのような挙動をしている模様
+  - テキストでは、`beef`が 1stack に丸ごと格納されていたがおそらく難読化(攻撃防止)のためにコンパイラがこのような挙動をしている模様
 - `0xbffff68b`から入力されていることが確認できる
 
 ## 関数のリターンアドレスの書き換え
@@ -162,14 +166,16 @@ gcc -m32 -fno-stack-protector bof_8-1.c -o test
 ### 演習
 
 以下の点を確認する
+
 - リターンアドレスまで、何文字入力をしてメモリを塗りつぶせば良いか特定する(**オフセットの特定**)
 - 攻撃で呼び出したい関数はメモリ上のどこから始まっているか確認する
 
 #### 演習結果
 
-pattc, pattoの使用方法などについてはメモの部分にまとめる。
+pattc, patto の使用方法などについてはメモの部分にまとめる。
 実施した結果、以下のような解析結果となった。
-- 入力部分からリターンアドレスまでのオフセットは60byte分
+
+- 入力部分からリターンアドレスまでのオフセットは 60byte 分
 - 実行したい関数である`pwn`関数のアドレスは`0x804846d`
 
 ```s
@@ -177,6 +183,25 @@ gdb-peda$ patto 2AAH
 2AAH found at offset: 60
 gdb-peda$ p pwn
 $2 = {<text variable, no debug info>} 0x804846d <pwn>
+```
+
+## Return to libc
+
+プログラムが実行する関数のリターンアドレスを強制的に書き換えて、C 言語の標準ライブラリの libc を呼び出して攻撃を行うものを**Return to libc**と呼ぶ。
+
+### 演習
+
+この攻撃を行うにあたって、取得に必要な情報を以下に示す。
+
+- リターンアドレスまでのオフセット
+  - `pattc,patto`を使用
+- system 関数のアドレス
+  - `p`コマンドを使用
+- "/bin/sh"が格納されているアドレス
+  - **本来の攻撃では/bin/sh の文字列を対象の Stack へ配置して、それを呼び出して攻撃を行う**
+
+```sh
+
 ```
 
 ## Memo
@@ -226,7 +251,7 @@ main:
   - [文字コード](https://www.k-cube.co.jp/wakaba/server/ascii_code.html)
   - [32bit,64bit のシステムコール呼び出し方法まとめ](https://www.mztn.org/lxasm64/x86_x64_table.html)
 
-### Hello World(32ビット以上の文字列の出力)
+### Hello World(32 ビット以上の文字列の出力)
 
 ```s
 global main
@@ -247,13 +272,13 @@ main:
 	int 0x80
 ```
 
-- `Hello World!`を逆向きに並べてスタックにpush
-- 第二引数で指定した`ESP`から文字列の分だけのバイト数を第三引数に16進数で指定
+- `Hello World!`を逆向きに並べてスタックに push
+- 第二引数で指定した`ESP`から文字列の分だけのバイト数を第三引数に 16 進数で指定
 - 学べたこと
   - リトルエンディアン方式
-  - システムコールWriteの使い方
+  - システムコール Write の使い方
 
-### gdb-pedaのpattc, pattoコマンド使い方
+### gdb-peda の pattc, patto コマンド使い方
 
 ```s
 # TODO ↓文字列の生成
@@ -262,14 +287,14 @@ gdb-peda$ pattc 70
 'AAA%AAsAABAA$AAnAACAA-AA(AADAA;AA)AAEAAaAA0AAFAAbAA1AAGAAcAA2AAHAAdAA3'
 ...
 [----------------------------------registers-----------------------------------]
-EAX: 0x1 
-EBX: 0xb7fd0000 --> 0x1acda8 
-ECX: 0x13ac6a93 
-EDX: 0xbffff704 --> 0xb7fd0000 --> 0x1acda8 
-ESI: 0x0 
-EDI: 0x0 
-EBP: 0xbffff6d8 --> 0x0 
-ESP: 0xbffff6c0 --> 0xb7fd03c4 --> 0xb7fd11e0 --> 0x0 
+EAX: 0x1
+EBX: 0xb7fd0000 --> 0x1acda8
+ECX: 0x13ac6a93
+EDX: 0xbffff704 --> 0xb7fd0000 --> 0x1acda8
+ESI: 0x0
+EDI: 0x0
+EBP: 0xbffff6d8 --> 0x0
+ESP: 0xbffff6c0 --> 0xb7fd03c4 --> 0xb7fd11e0 --> 0x0
 EIP: 0x80484a5 (<main+9>:       call   0x8048481 <vuln>)
 EFLAGS: 0x286 (carry PARITY adjust zero SIGN trap INTERRUPT direction overflow)
 [-------------------------------------code-------------------------------------]
@@ -282,15 +307,15 @@ EFLAGS: 0x286 (carry PARITY adjust zero SIGN trap INTERRUPT direction overflow)
    0x80484b6 <main+26>: mov    eax,0x0
    0x80484bb <main+31>: leave
 Guessed arguments:
-arg[0]: 0xb7fd03c4 --> 0xb7fd11e0 --> 0x0 
+arg[0]: 0xb7fd03c4 --> 0xb7fd11e0 --> 0x0
 [------------------------------------stack-------------------------------------]
-0000| 0xbffff6c0 --> 0xb7fd03c4 --> 0xb7fd11e0 --> 0x0 
-0004| 0xbffff6c4 --> 0xb7fff000 --> 0x20f30 
+0000| 0xbffff6c0 --> 0xb7fd03c4 --> 0xb7fd11e0 --> 0x0
+0004| 0xbffff6c4 --> 0xb7fff000 --> 0x20f30
 0008| 0xbffff6c8 --> 0x80484cb (<__libc_csu_init+11>:   add    ebx,0x1b35)
-0012| 0xbffff6cc --> 0xb7fd0000 --> 0x1acda8 
+0012| 0xbffff6cc --> 0xb7fd0000 --> 0x1acda8
 0016| 0xbffff6d0 --> 0x80484c0 (<__libc_csu_init>:      push   ebp)
-0020| 0xbffff6d4 --> 0x0 
-0024| 0xbffff6d8 --> 0x0 
+0020| 0xbffff6d4 --> 0x0
+0024| 0xbffff6d8 --> 0x0
 0028| 0xbffff6dc --> 0xb7e3caf3 (<__libc_start_main+243>:       mov    DWORD PTR [esp],eax)
 [------------------------------------------------------------------------------]
 Legend: code, data, rodata, value
@@ -299,12 +324,12 @@ Legend: code, data, rodata, value
 gdb-peda$ n
 AAA%AAsAABAA$AAnAACAA-AA(AADAA;AA)AAEAAaAA0AAFAAbAA1AAGAAcAA2AAHAAdAA3
 [----------------------------------registers-----------------------------------]
-EAX: 0x1 
-EBX: 0xb7fd0000 --> 0x1acda8 
-ECX: 0xb7fd18a4 --> 0x0 
-EDX: 0x1 
-ESI: 0x0 
-EDI: 0x0 
+EAX: 0x1
+EBX: 0xb7fd0000 --> 0x1acda8
+ECX: 0xb7fd18a4 --> 0x0
+EDX: 0x1
+ESI: 0x0
+EDI: 0x0
 EBP: 0x41416341 ('AcAA')
 ESP: 0xbffff6c0 ("AAdAA3")
 # TODO ↓呼び出している関数のvulnのリターンアドレスが以下のpattcで生成した文字列に塗りつぶされるためこの文字列をコピーする
@@ -314,12 +339,12 @@ EFLAGS: 0x10286 (carry PARITY adjust zero SIGN trap INTERRUPT direction overflow
 Invalid $PC address: 0x48414132
 [------------------------------------stack-------------------------------------]
 0000| 0xbffff6c0 ("AAdAA3")
-0004| 0xbffff6c4 --> 0xb7003341 
+0004| 0xbffff6c4 --> 0xb7003341
 0008| 0xbffff6c8 --> 0x80484cb (<__libc_csu_init+11>:   add    ebx,0x1b35)
-0012| 0xbffff6cc --> 0xb7fd0000 --> 0x1acda8 
+0012| 0xbffff6cc --> 0xb7fd0000 --> 0x1acda8
 0016| 0xbffff6d0 --> 0x80484c0 (<__libc_csu_init>:      push   ebp)
-0020| 0xbffff6d4 --> 0x0 
-0024| 0xbffff6d8 --> 0x0 
+0020| 0xbffff6d4 --> 0x0
+0024| 0xbffff6d8 --> 0x0
 0028| 0xbffff6dc --> 0xb7e3caf3 (<__libc_start_main+243>:       mov    DWORD PTR [esp],eax)
 [------------------------------------------------------------------------------]
 Legend: code, data, rodata, value
@@ -330,11 +355,11 @@ gdb-peda$ patto 2AAH
 2AAH found at offset: 60
 gdb-peda$ p pwn
 $1 = {<text variable, no debug info>} 0x804846d <pwn>
-gdb-peda$ 
+gdb-peda$
 ```
 
-- ブレークポイントはmain関数のみ設定して、そこから入力がある`vuln`の実行部まで`n`で一つずつ進める
-  - ブレークポイントを`vuln`まで設定してしまうとEIPにリターンアドレスが入らない
+- ブレークポイントは main 関数のみ設定して、そこから入力がある`vuln`の実行部まで`n`で一つずつ進める
+  - ブレークポイントを`vuln`まで設定してしまうと EIP にリターンアドレスが入らない
 
 ### 関数のアドレスの特定
 
